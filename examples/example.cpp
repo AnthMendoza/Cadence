@@ -1,4 +1,9 @@
 #include "scheduler.h"
+#include <process.h>
+
+class work : public cadence::process{
+
+};
 
 int main(){
     int worker_count = 10;

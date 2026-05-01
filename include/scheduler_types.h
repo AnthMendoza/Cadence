@@ -24,6 +24,4 @@ struct SchedulerTask{
     const TaskId ID;
 };
 
-
-
 }
