@@ -10,7 +10,7 @@ TEST(constructionTest , workerThreadGenerationCount){
 
     EXPECT_EQ(count,sch.get_worker_count());
     EXPECT_EQ(count,sch.get_thread_count());
-
+    sch.stop();
 }
 
 TEST(constructionTest , multipleStartCalls){
@@ -25,6 +25,7 @@ TEST(constructionTest , multipleStartCalls){
 
     EXPECT_EQ(count,sch.get_worker_count());
     EXPECT_EQ(count,sch.get_thread_count());
+    sch.stop();
 }
 
 

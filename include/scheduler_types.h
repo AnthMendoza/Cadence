@@ -3,7 +3,7 @@
 #include <time_literal.h>
 
 namespace cadence{
-using WorkerCount = uint8_t;
+using WorkerCount = uint16_t;
 using TaskId = uint32_t;
 
 enum class Priority : uint8_t {
@@ -18,10 +18,4 @@ struct ScheduledTask{
     TimeUs deadline_us;
     Priority priority;
 };
-
-struct SchedulerTask{
-    const char* name;
-    const TaskId ID;
-};
-
 }

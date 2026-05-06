@@ -12,15 +12,15 @@ class process{
 
     protected:
 
-    const TimeUs get_interval() const{
-        return interval_us;
-    }
-
     void set_interval(const TimeUs interval_us_){
         interval_us = interval_us_;
     }
 
     public:
+    
+    const TimeUs get_interval() const{
+        return interval_us;
+    }
     process() = delete;
 
     process(TimeUs interval , Priority priority_): interval_us(interval) , priority(priority_){

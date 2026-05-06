@@ -29,7 +29,7 @@ namespace cadence{
     }
 
     void worker::stop(){
-        running = true;
+        running = false;
         cv.notify_one();
     }
 
