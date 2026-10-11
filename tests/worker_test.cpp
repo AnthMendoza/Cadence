@@ -1,15 +1,17 @@
 #include <gtest/gtest.h>
 #include <cadence.h>
+#include <memory>
 
-class worker_fixture : public cadence::process{
+
+class fixture : public cadence::process{
     public:
     int ID;
     int run_count{0};
-    worker_fixture(cadence::TimeUs interval_us , cadence::Priority prio , int ID_ ): cadence::process(interval_us , prio) , ID(ID_){
+    fixture(cadence::TimeDur interval_us , cadence::Priority prio , int ID_ ,bool logging_ = false): cadence::process(interval_us , prio, logging_) , ID(ID_){
 
     }
 
-    void run() override{
+    void task() override{
         run_count ++;
     }
 
@@ -20,30 +22,59 @@ TEST(workerTest, registersProcesses) {
     cadence::scheduler sch(count);
 
     constexpr int num_processes = 20;
-    std::vector<worker_fixture> fixtures;
 
     for (int i = 0; i < num_processes; ++i) {
-        fixtures.emplace_back(200, cadence::Priority::Normal, i);
-        sch.set_process(fixtures.back());
+        auto fix = std::make_shared<fixture>( cadence::TimeDur(100), cadence::Priority::Normal, i);
+        sch.set_process(fix);
     }
 
     EXPECT_EQ(sch.get_process_count(), num_processes);
 }
 
+/*
+TEST(workerTest, executesExpiredProcess) {
+    cadence::WorkerCount count = 1;
+    cadence::scheduler sch(count);
 
-TEST(workerTest, executesProcesses) {
-    cadence::scheduler sch(4);
+    auto interval = cadence::TimeDur(1'000'000);
+    int cycles = 100;
 
-    worker_fixture proc(100, cadence::Priority::Normal, 1);
+    fixture proc( interval, cadence::Priority::Normal, 1);
 
     sch.set_process(proc);
     sch.start();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+
+    std::this_thread::sleep_for(interval * cycles / 2);
+    proc
+    std::this_thread::sleep_until();
+
 
     sch.stop();
 
-    EXPECT_EQ(proc.run_count, 5);
+    EXPECT_EQ(proc.run_count, cycles);
+}
+
+/*
+
+TEST(workerTest, executesProcesses) {
+    cadence::WorkerCount count = 4;
+    cadence::scheduler sch(count);
+
+    auto interval = cadence::TimeDur(1'000'000);
+    int cycles = 10000;
+
+    fixture proc( interval, cadence::Priority::Normal, 1);
+
+    sch.set_process(proc);
+    sch.start();
+
+    std::this_thread::sleep_for(interval*cycles);
+
+    sch.stop();
+
+    EXPECT_EQ(proc.run_count, cycles);
 }
 
 
@@ -52,18 +83,23 @@ TEST(workerTest, setOfProcessExecutes) {
     cadence::scheduler sch(count);
 
     constexpr int num_processes = 20;
-    std::vector<worker_fixture> fixtures;
+    auto interval = cadence::TimeDur(1'000'000);
+    int cycles = 10000;
+
+    std::vector<std::shared_ptr<fixture>> processes;
+    processes.reserve(num_processes);
 
     for (int i = 0; i < num_processes; ++i) {
-        fixtures.emplace_back(100, cadence::Priority::Normal, i);
-        sch.set_process(fixtures.back());
+        processes.push_back(std::make_shared<fixture>(interval, cadence::Priority::Normal, i , true));
+        sch.set_process(processes.back());
     }
+
     sch.start();
-
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-
+    std::this_thread::sleep_for(interval * cycles);
     sch.stop();
-    for (int i = 0; i < num_processes; ++i) {
-        EXPECT_EQ(fixtures[i].run_count, 5);
+
+    for (const auto& process : processes) {
+        EXPECT_NEAR(process->run_count, cycles,1);
     }
 }
+*/

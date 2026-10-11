@@ -14,16 +14,17 @@ class worker {
 private:
     std::mutex& mtx;
     std::condition_variable& cv;
-    std::vector<process*>& process_list;
+    std::vector<std::shared_ptr<process>>& process_list;
 
-    bool running = false;
+
+    bool running = true;
     bool wake_worker = false;
     TaskId process_id{};
 
 public:
     worker(std::mutex& m,
            std::condition_variable& c,
-           std::vector<process*>& p)
+           std::vector<std::shared_ptr<process>>& p)
         : mtx(m), cv(c), process_list(p) {}
 
     void start();

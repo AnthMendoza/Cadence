@@ -1,4 +1,5 @@
 #pragma once
+#include "cadence.h"
 #include <vector>
 #include <queue>
 #include <process.h>
@@ -6,26 +7,35 @@
 #include <thread>
 #include <type_traits>
 #include <optional>
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <limits>
 
 namespace cadence {
 
+struct SchedulerConfig{
+    std::chrono::microseconds idle_wait_time{1000};
+};
+
 class scheduler {
     private:
-    //ID matches position in vector ID:1 = process_list[1];
-    bool running = false;
-    std::vector<process*> process_list;
+    // Task IDs are stable vector indices; removed slots are never reused.
+    std::atomic<bool> running = false;
+    SchedulerConfig config;
+    std::vector<std::shared_ptr<process>> process_list;
+    std::vector<bool> process_active;
     std::mutex mtx;
     std::condition_variable cv; 
     WorkerCount worker_count;
     std::vector<worker> workers;
     std::vector<std::thread> threads;
     std::thread scheduler_thread;
-    std::__1::chrono::steady_clock::time_point start_time;
+    std::chrono::steady_clock::time_point start_time;
 
     struct protocall {
         bool operator()(const ScheduledTask& a, const ScheduledTask& b) {
-            if( a.deadline_us < b.deadline_us) return true;
-            return false;
+            return a.deadline_ns > b.deadline_ns;
         }
     };
 
@@ -34,6 +44,7 @@ class scheduler {
 
 
     void worker_factory(WorkerCount count);
+    void seed_process_queue();
     void run();
     std::optional<ScheduledTask> get_next_deadline();
     
@@ -43,11 +54,33 @@ class scheduler {
     void stop();
 
     template<typename T>
-    void set_process(T& process_instance){
-        if(std::is_base_of_v<process,T>){
-            process_list.push_back(dynamic_cast<process*>(&process_instance));
+    TaskId set_process(std::shared_ptr<T> process_instance){
+        if constexpr (!std::is_base_of_v<process,T>) {
+            return invalid_task_id;
         }
+        if (!process_instance) return invalid_task_id;
+
+        std::lock_guard<std::mutex> lock(mtx);
+        const TaskId id = static_cast<TaskId>(process_list.size());
+        std::shared_ptr<process> base_process = std::move(process_instance);
+        process_list.push_back(std::move(base_process));
+        process_active.push_back(true);
+        if(running.load(std::memory_order_acquire)){
+            const auto now = std::chrono::duration_cast<TimeDur>(std::chrono::steady_clock::now() - start_time);
+            const auto interval = process_list[id]->get_interval();
+            const auto first_deadline = now + interval;
+            process_queue.push(ScheduledTask{
+                id,
+                first_deadline,
+                process_list[id]->get_priority()
+            });
+            cv.notify_all();
+        }
+        
+        return id;
     }
+
+    bool remove_process(TaskId id);
 
     WorkerCount get_worker_count();
     WorkerCount get_thread_count();
@@ -55,6 +88,8 @@ class scheduler {
 
 
     bool is_running() const;
+
+    static constexpr TaskId invalid_task_id = std::numeric_limits<TaskId>::max();
 
     scheduler(WorkerCount w_c): worker_count(w_c){
 

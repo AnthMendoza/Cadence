@@ -1,8 +1,10 @@
 #include "scheduler.h"
 #include <process.h>
+#include <vector>
+
 
 class work : public cadence::process{
-
+    
 };
 
 int main(){

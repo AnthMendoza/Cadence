@@ -3,7 +3,6 @@
 namespace cadence{
 
     void worker::start() {
-        running = true;
         std::unique_lock<std::mutex> lk(mtx);
 
         while (running) {
@@ -13,27 +12,32 @@ namespace cadence{
 
             if (!running) break;
 
-            if (process_id >= process_list.size())[[unlikely]]{
+            if (process_id >= process_list.size() || !process_list[process_id])[[unlikely]]{
                 wake_worker = false;
                 continue;
             }
 
             TaskId id = process_id;
+            auto current = process_list[id];
             wake_worker = false;
 
             lk.unlock();
             //unlock mutex for work
-            process_list[id]->run();
+            current->task();
             lk.lock();
         }
     }
 
     void worker::stop(){
-        running = false;
-        cv.notify_one();
+        {
+            std::lock_guard<std::mutex> lk(mtx);
+            running = false;
+        }
+        cv.notify_all();
     }
 
     const bool worker::is_running() const{
+        std::lock_guard<std::mutex> lk(mtx);
         return running;
     }
 

@@ -52,6 +52,7 @@ enable_testing()
 add_executable(Cadence_tests
     tests/construction_test.cpp
     tests/worker_test.cpp
+    tests/timing_test.cpp
 )
 
 
