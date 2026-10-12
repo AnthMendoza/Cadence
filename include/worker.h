@@ -5,7 +5,6 @@
 #include <memory>
 #include <vector>
 #include <process.h>
-#include <optional>
 #include <scheduler_types.h>
 
 namespace cadence{
@@ -15,21 +14,26 @@ private:
     std::mutex& mtx;
     std::condition_variable& cv;
     std::vector<std::shared_ptr<process>>& process_list;
-
+    std::vector<bool>& process_active;
+    std::vector<std::shared_ptr<std::mutex>>& process_mutexes;
+    ScheduledTaskQueue& process_queue;
+    std::atomic<bool>& scheduler_running;
 
     bool running = true;
-    bool wake_worker = false;
-    TaskId process_id{};
 
 public:
-    worker(std::mutex& m,
-           std::condition_variable& c,
-           std::vector<std::shared_ptr<process>>& p)
-        : mtx(m), cv(c), process_list(p) {}
+    worker( std::mutex& m,
+            std::condition_variable& c,
+            std::vector<std::shared_ptr<process>>& p,
+            std::vector<bool>& pa,
+            std::vector<std::shared_ptr<std::mutex>>& pm,
+            ScheduledTaskQueue& q,
+            std::atomic<bool>& scheduler_state)
+        : mtx(m), cv(c), process_list(p), process_active(pa), process_mutexes(pm), process_queue(q),
+          scheduler_running(scheduler_state) {}
 
     void start();
     void stop();
     const bool is_running() const;
-    void set_ID(TaskId id);
 };
 }

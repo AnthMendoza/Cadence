@@ -1,12 +1,10 @@
 #pragma once
 #include "cadence.h"
 #include <vector>
-#include <queue>
 #include <process.h>
 #include <worker.h>
 #include <thread>
 #include <type_traits>
-#include <optional>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
@@ -14,7 +12,7 @@
 
 namespace cadence {
 
-struct SchedulerConfig{
+struct SchedulerConfig {
     std::chrono::microseconds idle_wait_time{1000};
 };
 
@@ -22,31 +20,17 @@ class scheduler {
     private:
     // Task IDs are stable vector indices; removed slots are never reused.
     std::atomic<bool> running = false;
-    SchedulerConfig config;
     std::vector<std::shared_ptr<process>> process_list;
     std::vector<bool> process_active;
+    std::vector<std::shared_ptr<std::mutex>> process_mutexes;
     std::mutex mtx;
     std::condition_variable cv; 
     WorkerCount worker_count;
     std::vector<worker> workers;
     std::vector<std::thread> threads;
-    std::thread scheduler_thread;
-    std::chrono::steady_clock::time_point start_time;
-
-    struct protocall {
-        bool operator()(const ScheduledTask& a, const ScheduledTask& b) {
-            return a.deadline_ns > b.deadline_ns;
-        }
-    };
-
-    std::priority_queue<ScheduledTask, std::vector<ScheduledTask>, protocall> process_queue;
-
-
+    ScheduledTaskQueue process_queue;
 
     void worker_factory(WorkerCount count);
-    void seed_process_queue();
-    void run();
-    std::optional<ScheduledTask> get_next_deadline();
     
     public:
 
@@ -65,8 +49,9 @@ class scheduler {
         std::shared_ptr<process> base_process = std::move(process_instance);
         process_list.push_back(std::move(base_process));
         process_active.push_back(true);
+        process_mutexes.push_back(std::make_shared<std::mutex>());
         if(running.load(std::memory_order_acquire)){
-            const auto now = std::chrono::duration_cast<TimeDur>(std::chrono::steady_clock::now() - start_time);
+            const auto now = std::chrono::steady_clock::now();
             const auto interval = process_list[id]->get_interval();
             const auto first_deadline = now + interval;
             process_queue.push(ScheduledTask{
@@ -85,6 +70,7 @@ class scheduler {
     WorkerCount get_worker_count();
     WorkerCount get_thread_count();
     uint16_t get_process_count();
+    bool notify(TaskId id,Priority p = Priority::Normal);
 
 
     bool is_running() const;
