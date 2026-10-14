@@ -252,13 +252,6 @@ tests/       Functional regression tests
 diagnostics/ Standalone Monte Carlo characterization workload
 ```
 
-## Contributing
-
-Keep changes focused and describe the behavior they affect. For scheduler
-changes, include a regression test where practical and run the full test suite.
-Report issues with compiler and CMake versions, reproduction steps, and relevant
-test output. Update usage documentation when public behavior changes.
-
 ## License
 
 Cadence is available under the [MIT License](LICENSE).
