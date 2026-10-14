@@ -1,7 +1,7 @@
-#include <gtest/gtest.h>
 #include <cadence.h>
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <memory>
@@ -61,7 +61,7 @@ cadence::TimeDur percentile(std::vector<cadence::TimeDur> samples, double fracti
 
 }
 
-TEST(timing_tests, monteCarloMixedIntervalsAndTaskLengths) {
+int main() {
     constexpr int process_count = 100;
     constexpr int trial_count = 5;
     constexpr auto sample_duration = 300ms;

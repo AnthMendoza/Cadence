@@ -36,31 +36,39 @@ target_link_libraries(example
 )
 
 
-include(FetchContent)
+include(CTest)
+option(CADENCE_BUILD_CHARACTERIZATION "Build the standalone Monte Carlo characterization runner" OFF)
 
-FetchContent_Declare(
-    googletest
-    URL https://github.com/google/googletest/archive/refs/heads/main.zip
-)
+if(BUILD_TESTING)
+    include(FetchContent)
 
-set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
-set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest)
+    FetchContent_Declare(
+        googletest
+        URL https://github.com/google/googletest/archive/refs/tags/v1.18.0.zip
+        URL_HASH SHA256=63b9c77751a5b8f492486005f67533fdc58682b67476fcb91650be5958d5195a
+    )
 
-enable_testing()
+    set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
 
-add_executable(Cadence_tests
-    tests/construction_test.cpp
-    tests/worker_test.cpp
-    tests/timing_test.cpp
-    tests/process_test.cpp
-    tests/scheduling_test.cpp
-)
+    add_executable(Cadence_tests
+        tests/construction_test.cpp
+        tests/worker_test.cpp
+        tests/process_test.cpp
+        tests/scheduling_test.cpp
+    )
 
+    target_link_libraries(Cadence_tests
+        PRIVATE Cadence_lib GTest::gtest_main
+    )
 
-target_link_libraries(Cadence_tests
-    Cadence_lib
-    GTest::gtest_main
-)
+    add_test(NAME Cadence_tests COMMAND Cadence_tests)
+endif()
 
-add_test(NAME Cadence_tests COMMAND Cadence_tests)
+if(CADENCE_BUILD_CHARACTERIZATION)
+    add_executable(Cadence_characterization
+        diagnostics/monte_carlo.cpp
+    )
+    target_link_libraries(Cadence_characterization PRIVATE Cadence_lib)
+endif()

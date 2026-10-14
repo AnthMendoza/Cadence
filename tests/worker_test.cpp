@@ -7,7 +7,7 @@ class fixture : public cadence::process{
     public:
     int ID;
     int run_count{0};
-    fixture(cadence::TimeDur interval_us , cadence::Priority prio , int ID_ ,bool logging_ = false): cadence::process(interval_us , prio, logging_) , ID(ID_){
+    fixture(cadence::TimeDur interval_us , cadence::Priority prio , int ID_): cadence::process(interval_us , prio) , ID(ID_){
 
     }
 

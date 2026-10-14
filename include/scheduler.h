@@ -18,7 +18,7 @@ struct SchedulerConfig {
 
 class scheduler {
     private:
-    // Task IDs are stable vector indices; removed slots are never reused.
+    //Task IDs are stable vector indices; removed slots are never reused.
     std::atomic<bool> running = false;
     std::vector<std::shared_ptr<process>> process_list;
     std::vector<bool> process_active;
@@ -79,6 +79,10 @@ class scheduler {
 
     scheduler(WorkerCount w_c): worker_count(w_c){
 
+    }
+
+    ~scheduler(){
+        stop();
     }
 };
 

@@ -13,7 +13,6 @@ class process{
     TimeDur interval_ns;
     Priority priority;
     std::atomic<bool> is_running{false};
-    ProcessTimes time_logs;
 
     protected:
 
@@ -35,15 +34,9 @@ class process{
         return is_running.load(std::memory_order_acquire);
     }
 
-    ProcessTimes get_logs() const{
-        return time_logs;
-    }
-
     process() = delete;
 
-    process(TimeDur interval , Priority priority_,bool logging = false): interval_ns(interval) , priority(priority_){
-        time_logs.logging_enabled = logging;
-    }
+    process(TimeDur interval , Priority priority_): interval_ns(interval) , priority(priority_){}
 
     process(const process& other) = delete;
 
